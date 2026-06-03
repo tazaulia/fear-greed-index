@@ -107,6 +107,23 @@ async function main() {
     throw new Error('No overlapping dates between Fear & Greed and S&P 500');
   }
 
+  const outPath = path.join(__dirname, '..', 'data.json');
+
+  // Skip the write entirely if the actual market data is unchanged (e.g. on
+  // weekends/holidays). Only the `rows` are compared — the `updated` timestamp
+  // is intentionally ignored so it can't trigger a needless daily commit/deploy.
+  if (fs.existsSync(outPath)) {
+    try {
+      const prev = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+      if (JSON.stringify(prev.rows) === JSON.stringify(rows)) {
+        console.log(`No change — ${rows.length} rows unchanged, leaving data.json as is`);
+        return;
+      }
+    } catch {
+      // Unreadable/corrupt existing file — fall through and overwrite it.
+    }
+  }
+
   const out = {
     updated: new Date().toISOString(),
     source: {
@@ -117,7 +134,6 @@ async function main() {
     rows,
   };
 
-  const outPath = path.join(__dirname, '..', 'data.json');
   fs.writeFileSync(outPath, JSON.stringify(out, null, 2) + '\n');
   console.log(
     `Wrote ${rows.length} rows (${rows[0].d} → ${rows[rows.length - 1].d}) to data.json`
