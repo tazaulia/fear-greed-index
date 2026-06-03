@@ -3,116 +3,151 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CNN Fear & Greed vs S&P 500</title>
+<title>Fear, greed and the S&P 500</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f8f6;color:#222;padding:20px 24px}
-  h1{font-size:17px;font-weight:500;margin-bottom:2px}
-  .sub{font-size:12px;color:#888;margin-bottom:16px}
-  .top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-  .leg{display:flex;gap:16px;font-size:11px;color:#777;align-items:center}
-  .li{display:flex;align-items:center;gap:5px}
-  .btns{display:flex;gap:6px}
-  button{font-size:12px;padding:3px 10px;border:1px solid #ccc;background:transparent;border-radius:5px;cursor:pointer;color:#444}
-  button.on{background:#e8e8e5;border-color:#999}
-  .wrap{position:relative;width:100%;height:420px;background:#fff;border-radius:10px;padding:14px 14px 10px;border:1px solid #e5e5e3}
-  .state{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#999;text-align:center;padding:0 20px}
-  .note{font-size:10px;color:#bbb;margin-top:10px}
-  .theme-btn{font-size:12px;padding:3px 10px;border:1px solid #ccc;background:transparent;border-radius:5px;cursor:pointer;color:#444}
-  body.dark{background:#1c1c1a;color:#eee}
-  body.dark .wrap{background:#242421;border-color:#333}
-  body.dark button{border-color:#444;color:#bbb}
-  body.dark button.on{background:#333;border-color:#666}
-  body.dark .leg,.dark .note{color:#666}
-  body.dark .theme-btn{border-color:#444;color:#bbb}
-  @media(prefers-color-scheme:dark){
-    body:not(.light){background:#1c1c1a;color:#eee}
-    body:not(.light) .wrap{background:#242421;border-color:#333}
-    body:not(.light) button{border-color:#444;color:#bbb}
-    body:not(.light) button.on{background:#333;border-color:#666}
-    body:not(.light) .leg, body:not(.light) .note{color:#666}
-    body:not(.light) .theme-btn{border-color:#444;color:#bbb}
+  :root{
+    --canvas:#ffffff;
+    --ink:#0d0d0d;
+    --body-grey:#595959;
+    --hairline:#d9d9d9;
+    --red:#e3120b;
+    --fg:#2d6a9e;   /* Fear & Greed line */
+    --sp:#a6a6a6;   /* S&P 500 line */
+    --serif:'Source Serif 4', ui-serif, Georgia, serif;
+    --sans:'Source Sans 3', system-ui, Helvetica, Arial, sans-serif;
   }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  body{ font-family:var(--sans); background:var(--canvas); color:var(--ink); font-size:15px; line-height:1.45; }
+  .num{ font-variant-numeric:tabular-nums lining-nums; }
+
+  main{
+    margin:0;
+    padding:clamp(20px,3vw,32px) clamp(18px,3vw,32px);
+    border-top:2px solid var(--red);   /* full-bleed Economist red rule */
+  }
+
+  /* Header */
+  .kicker{ font-weight:600; font-size:14px; color:var(--red); margin-bottom:6px; }
+  h1{
+    font-family:var(--serif); font-weight:700;
+    font-size:clamp(26px,5vw,36px); line-height:1.1;
+    text-wrap:balance;
+  }
+
+  /* Indicators */
+  .indicators{ display:flex; gap:clamp(20px,5vw,44px); margin:20px 0 24px; }
+  .ind{ min-width:0; }
+  .ind-label{ font-size:13px; color:var(--body-grey); }
+  .ind-val{ font-family:var(--serif); font-weight:600; font-size:clamp(20px,4vw,24px); line-height:1.1; margin-top:2px; }
+  .ind-zone{ font-size:13px; color:var(--body-grey); }
+
+  /* Controls */
+  .controls{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    margin-top:8px; padding-top:14px; border-top:1px solid var(--hairline); }
+  .ranges{ display:flex; }
+  .ranges button{
+    appearance:none; background:none; border:0; cursor:pointer;
+    font-family:var(--sans); font-size:15px; font-weight:600; color:var(--ink);
+    padding:9px 9px; line-height:1; border-bottom:2px solid transparent;
+    transition:color 130ms ease;
+  }
+  .ranges button:first-child{ padding-left:0; }
+  .ranges button:hover{ color:var(--red); }
+  .ranges button:active{ scale:.96; }
+  .ranges button.on{ color:var(--red); border-bottom-color:var(--red); }
+  .ranges button:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
+
+  .legend{ display:flex; gap:16px; font-size:13px; color:var(--body-grey); }
+  .legend .li{ display:flex; align-items:center; gap:7px; }
+  .legend .sw{ width:18px; height:2px; }
+  .legend .sw.fg{ background:var(--fg); }
+  .legend .sw.sp{ background:var(--sp); }
+
+  /* Chart */
+  .wrap{ position:relative; width:100%; height:clamp(340px,46vw,560px); margin-top:18px; }
+  .state{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:14px; color:var(--body-grey); text-align:center; padding:0 24px; }
+
+  .source{ margin-top:16px; padding-top:12px; border-top:1px solid var(--hairline);
+    font-size:13px; color:var(--body-grey); }
 </style>
 </head>
 <body>
-<h1>CNN Fear &amp; Greed Index vs S&amp;P 500</h1>
-<div class="sub" id="sub">Loading…</div>
+<main>
+  <header>
+    <div class="kicker">Markets &middot; daily sentiment</div>
+    <h1>Fear &amp; Greed Index</h1>
+  </header>
 
-<div class="top">
-  <div class="leg">
-    <div class="li"><span style="width:22px;height:2px;background:#378ADD;display:inline-block;border-radius:1px"></span>Fear &amp; Greed (left, 0–100)</div>
-    <div class="li"><span style="width:22px;height:2px;background:#8B6914;display:inline-block;border-radius:1px"></span>S&amp;P 500 (right, index)</div>
-  </div>
-  <div style="display:flex;gap:12px;align-items:center">
-    <div class="btns">
-      <button onclick="go(90)"  id="b90">3m</button>
-      <button onclick="go(180)" id="b180">6m</button>
-      <button onclick="go(365)" id="b365">1y</button>
-      <button onclick="go(730)" id="b730">2y</button>
-      <button onclick="go(1825)" id="b1825" class="on">5y</button>
+  <section class="indicators" id="indicators" aria-label="Fear &amp; Greed readings">
+    <div class="ind">
+      <div class="ind-label">Previous close</div>
+      <div class="ind-val num" id="v-now">&mdash;</div>
+      <div class="ind-zone" id="z-now">&nbsp;</div>
     </div>
-    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☀︎</button>
-  </div>
-</div>
+    <div class="ind">
+      <div class="ind-label">One week ago</div>
+      <div class="ind-val num" id="v-week">&mdash;</div>
+      <div class="ind-zone" id="z-week">&nbsp;</div>
+    </div>
+    <div class="ind">
+      <div class="ind-label">One month ago</div>
+      <div class="ind-val num" id="v-month">&mdash;</div>
+      <div class="ind-zone" id="z-month">&nbsp;</div>
+    </div>
+  </section>
 
-<div class="wrap">
-  <canvas id="c" role="img" aria-label="CNN Fear & Greed Index vs S&P 500 daily values, trailing five years"></canvas>
-  <div class="state" id="state">Loading data…</div>
-</div>
-<div class="note">F&amp;G: CNN Business · S&amp;P 500: Yahoo Finance (^GSPC) · auto-updated daily · no fabricated data</div>
+  <div class="controls">
+    <div class="ranges" role="group" aria-label="Time range">
+      <button onclick="go(90)"   id="b90">3m</button>
+      <button onclick="go(180)"  id="b180">6m</button>
+      <button onclick="go(365)"  id="b365" class="on">1y</button>
+      <button onclick="go(730)"  id="b730">2y</button>
+      <button onclick="go(1825)" id="b1825">5y</button>
+    </div>
+    <div class="legend">
+      <span class="li"><span class="sw fg"></span>Fear &amp; Greed</span>
+      <span class="li"><span class="sw sp"></span>S&amp;P 500</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <canvas id="c" role="img" aria-label="CNN Fear & Greed Index versus the S&P 500, daily values"></canvas>
+    <div class="state" id="state">Loading data&hellip;</div>
+  </div>
+
+  <p class="source" id="source">Source: CNN Business; Yahoo Finance (^GSPC) &middot; auto-updated daily</p>
+</main>
 
 <script>
 let DATA = [];
-let chart, activeRange = 1825;
+let chart, activeRange = 365;
 
-function isDarkMode(){
-  if(document.body.classList.contains('dark')) return true;
-  if(document.body.classList.contains('light')) return false;
-  return window.matchMedia('(prefers-color-scheme:dark)').matches;
-}
-
-function toggleTheme(){
-  const body = document.body;
-  const sysDark = window.matchMedia('(prefers-color-scheme:dark)').matches;
-  if(body.classList.contains('dark')){
-    body.classList.remove('dark');
-    body.classList.add('light');
-    document.getElementById('themeBtn').textContent = '☽';
-  } else if(body.classList.contains('light')){
-    body.classList.remove('light');
-    document.getElementById('themeBtn').textContent = sysDark ? '☀︎' : '☽';
-  } else {
-    // no override yet — toggle away from system default
-    if(sysDark){ body.classList.add('light'); document.getElementById('themeBtn').textContent = '☽'; }
-    else { body.classList.add('dark'); document.getElementById('themeBtn').textContent = '☀︎'; }
-  }
-  if(DATA.length) draw();
-}
-
-function zc(v){return v<=24?'#E24B4A':v<=44?'#F09595':v<=55?'#888780':v<=75?'#97C459':'#3B6D11'}
-function zl(v){return v<=24?'Extreme Fear':v<=44?'Fear':v<=55?'Neutral':v<=75?'Greed':'Extreme Greed'}
+function zl(v){return v<=24?'Extreme fear':v<=44?'Fear':v<=55?'Neutral':v<=75?'Greed':'Extreme greed'}
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
 function go(days){
   activeRange = days;
   ['90','180','365','730','1825'].forEach(d => {
-    document.getElementById('b'+d).className = d == days ? 'on' : '';
+    document.getElementById('b'+d).classList.toggle('on', d == days);
   });
   if(DATA.length) draw();
 }
 
 function draw(){
-  // Window is measured back from the most recent available trading day.
   const last = DATA[DATA.length - 1].d;
   const ref = new Date(last);
   ref.setDate(ref.getDate() - activeRange);
   const cut = ref.toISOString().slice(0,10);
   const sl = DATA.filter(r => r.d >= cut);
 
-  const isDark = isDarkMode();
-  const gC = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.055)';
-  const tC = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.45)';
+  const fg = css('--fg'), sp = css('--sp'), ink = css('--ink'), grey = css('--body-grey'), hair = css('--hairline');
   const spVals = sl.map(r => r.sp500);
   const pad = (Math.max(...spVals) - Math.min(...spVals)) * 0.06;
 
@@ -122,102 +157,73 @@ function draw(){
     data: {
       labels: sl.map(r => r.d),
       datasets: [
-        {
-          label: 'Fear & Greed',
-          data: sl.map(r => r.fg),
-          borderColor: '#378ADD',
-          backgroundColor: 'transparent',
-          fill: false,
-          borderWidth: 1.5,
-          pointRadius: 0,
-          pointHoverRadius: 3,
-          tension: 0.2,
-          yAxisID: 'yFG'
-        },
-        {
-          label: 'S&P 500',
-          data: sl.map(r => r.sp500),
-          borderColor: '#8B6914',
-          backgroundColor: 'transparent',
-          fill: false,
-          borderWidth: 1.8,
-          pointRadius: 0,
-          pointHoverRadius: 3,
-          tension: 0.2,
-          yAxisID: 'ySP'
-        }
+        {label:'Fear & Greed', data: sl.map(r => r.fg), borderColor: fg, borderWidth: 2,
+         pointRadius: 0, pointHoverRadius: 3, tension: 0.18, yAxisID: 'yFG'},
+        {label:'S&P 500', data: sl.map(r => r.sp500), borderColor: sp, borderWidth: 2,
+         pointRadius: 0, pointHoverRadius: 3, tension: 0.18, yAxisID: 'ySP'}
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
       interaction: {mode: 'index', intersect: false},
       plugins: {
         legend: {display: false},
         tooltip: {
-          backgroundColor: isDark ? '#2a2a27' : '#fff',
-          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-          borderWidth: 1,
-          titleColor: isDark ? '#eee' : '#222',
-          bodyColor: isDark ? '#aaa' : '#555',
-          padding: 9,
+          backgroundColor: '#ffffff', borderColor: hair, borderWidth: 1,
+          titleColor: ink, bodyColor: grey, padding: 10, cornerRadius: 4, displayColors: false,
+          titleFont: {family: "'Source Serif 4', Georgia, serif", size: 13, weight: '600'},
+          bodyFont: {family: "'Source Sans 3', system-ui, sans-serif", size: 13},
           callbacks: {
-            title: items => {
-              const d = new Date(items[0].label);
-              return d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'});
-            },
+            title: items => new Date(items[0].label).toLocaleDateString('en-GB',
+              {day:'numeric', month:'short', year:'numeric'}),
             label: item => item.datasetIndex === 0
-              ? `  F&G: ${Math.round(item.raw)} — ${zl(item.raw)}`
-              : `  S&P 500: ${item.raw.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`
+              ? `F&G: ${Math.round(item.raw)} (${zl(item.raw)})`
+              : `S&P: ${item.raw.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`
           }
         }
       },
       scales: {
         x: {
-          ticks: {
-            color: tC,
-            maxTicksLimit: activeRange <= 90 ? 6 : activeRange <= 365 ? 8 : 10,
-            maxRotation: 0,
-            font: {size: 10},
+          ticks: {color: grey, maxTicksLimit: activeRange <= 90 ? 6 : activeRange <= 365 ? 8 : 10,
+            maxRotation: 0, font: {size: 11},
             callback: (_, i) => {
               if(i >= sl.length) return '';
               const d = new Date(sl[i].d);
               return activeRange <= 180
-                ? d.toLocaleDateString('en-US', {month:'short', day:'numeric'})
-                : d.toLocaleDateString('en-US', {month:'short', year:'2-digit'});
-            }
-          },
-          grid: {color: gC}
+                ? d.toLocaleDateString('en-GB', {month:'short', day:'numeric'})
+                : d.toLocaleDateString('en-GB', {month:'short', year:'numeric'});
+            }},
+          grid: {display: false}, border: {color: hair}
         },
         yFG: {
-          type: 'linear',
-          position: 'left',
-          min: 0, max: 100,
-          ticks: {
-            color: '#378ADD',
-            font: {size: 10},
-            stepSize: 25,
-            callback: v => ({0:'0', 25:'25', 50:'50', 75:'75', 100:'100'}[v] ?? '')
-          },
-          grid: {color: gC},
-          title: {display: true, text: 'Fear & Greed (0–100)', color: '#378ADD', font: {size: 10}}
+          type:'linear', position:'left', min:0, max:100,
+          ticks:{color: fg, font:{size:11}, stepSize:25,
+            callback: v => ({0:'0',25:'25',50:'50',75:'75',100:'100'}[v] ?? '')},
+          grid:{color: hair}, border:{display:false},
+          title:{display:true, text:'Fear & Greed', color: fg, font:{size:11, weight:'600'}}
         },
         ySP: {
-          type: 'linear',
-          position: 'right',
-          min: Math.floor(Math.min(...spVals) - pad),
-          max: Math.ceil(Math.max(...spVals) + pad),
-          ticks: {color: '#8B6914', font: {size: 10}, callback: v => Math.round(v).toLocaleString('en-US')},
-          grid: {drawOnChartArea: false},
-          title: {display: true, text: 'S&P 500 (index)', color: '#8B6914', font: {size: 10}}
+          type:'linear', position:'right',
+          min: Math.floor(Math.min(...spVals) - pad), max: Math.ceil(Math.max(...spVals) + pad),
+          ticks:{color: sp, font:{size:11}, callback: v => Math.round(v).toLocaleString('en-US')},
+          grid:{drawOnChartArea:false}, border:{display:false},
+          title:{display:true, text:'S&P 500', color: sp, font:{size:11, weight:'600'}}
         }
       }
     }
   });
 }
 
-function fmtDate(d){
-  return new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+function rowAtOrBefore(target){
+  for(let i = DATA.length - 1; i >= 0; i--){ if(DATA[i].d <= target) return DATA[i]; }
+  return DATA[0];
+}
+function shiftDays(iso, days){ const x = new Date(iso); x.setDate(x.getDate() - days); return x.toISOString().slice(0,10); }
+function fillReading(valEl, zoneEl, row){
+  document.getElementById(valEl).textContent = Math.round(row.fg);
+  document.getElementById(zoneEl).textContent = zl(row.fg);
 }
 
 async function load(){
@@ -229,22 +235,22 @@ async function load(){
     DATA = json.rows || [];
     if(!DATA.length) throw new Error('no rows');
 
-    const start = DATA[0].d, end = DATA[DATA.length - 1].d;
-    document.getElementById('sub').textContent =
-      `Daily · ${fmtDate(start)} – ${fmtDate(end)} · auto-updated`;
+    const last = DATA[DATA.length - 1];
+
+    fillReading('v-now',   'z-now',   last);
+    fillReading('v-week',  'z-week',  rowAtOrBefore(shiftDays(last.d, 7)));
+    fillReading('v-month', 'z-month', rowAtOrBefore(shiftDays(last.d, 30)));
+
     stateEl.style.display = 'none';
     draw();
   } catch (err) {
     stateEl.textContent = 'Could not load data. Please try again later.';
-    document.getElementById('sub').textContent = 'Data unavailable';
     console.error('Failed to load data.json:', err);
   }
 }
 
-// init toggle label
-document.getElementById('themeBtn').textContent =
-  window.matchMedia('(prefers-color-scheme:dark)').matches ? '☀︎' : '☽';
-
+Chart.defaults.font.family = "'Source Sans 3', system-ui, Helvetica, Arial, sans-serif";
+Chart.defaults.color = '#595959';
 load();
 </script>
 </body>

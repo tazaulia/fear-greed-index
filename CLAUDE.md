@@ -3,8 +3,19 @@
 ## What this is
 A single-page static dashboard that overlays the **CNN Fear & Greed Index** (0–100)
 against the **S&P 500 index** (^GSPC) over the trailing ~5 years, with range buttons
-(3m/6m/1y/2y/5y) and a light/dark toggle. Built with plain HTML + Chart.js (via CDN).
-Personal dashboard, deployed on Vercel.
+(3m/6m/1y/2y/5y). Built with plain HTML + Chart.js (via CDN). Personal dashboard,
+deployed on Vercel.
+
+## Visual design
+Styled after The Economist's editorial language — light-only (no dark mode), pure white
+canvas, red (`#e3120b`) 2px top rule on `<main>`, Source Serif 4 for the headline, Source
+Sans 3 for all chrome. Key CSS variables are declared in `:root` (`--canvas`, `--ink`,
+`--body-grey`, `--hairline`, `--red`, `--fg`, `--sp`) — chart colours are read from these
+at draw time via `getComputedStyle`, so changing a token flows through everywhere.
+
+The page has three indicator stats above the chart (Previous close / One week ago / One
+month ago), populated from `data.json` rows without any extra fetch. Default time range
+is **1y**. Dates are formatted `en-GB` throughout.
 
 ## How it works
 ```
