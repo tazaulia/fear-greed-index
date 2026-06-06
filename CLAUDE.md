@@ -28,8 +28,16 @@ index.html  → fetch('./data.json')  → Chart.js renders   (same-origin, no CO
 There is **no build step, no framework, no serverless function, and no npm
 dependency**. `scripts/fetch-data.js` runs on Node 20+ using the built-in `fetch`.
 
+## Analytics
+**Vercel Web Analytics** is wired in via two `<script>` tags in `index.html`'s `<head>`
+(a `window.va` queue stub + a deferred `/_vercel/insights/script.js`). No npm package —
+the script is served by Vercel's edge at deploy time, so it only works on the deployed
+site and must be toggled on in the Vercel dashboard (Project → Analytics → Enable).
+Locally that path 404s, which is harmless.
+
 ## Files
-- `index.html` — markup + all chart logic. Reads `./data.json` at load.
+- `index.html` — markup + all chart logic. Reads `./data.json` at load. Also carries the
+  Vercel Web Analytics scripts (see Analytics above).
 - `data.json` — `{ updated, source, range, rows: [{ d, fg, sp500 }] }`. Generated; committed.
 - `scripts/fetch-data.js` — the only data-fetching code.
 - `.github/workflows/update-data.yml` — daily refresh.
