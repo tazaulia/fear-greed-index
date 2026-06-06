@@ -1,5 +1,7 @@
 # Fear & Greed vs S&P 500
 
+**Live → [fear-greed.taza.me](https://fear-greed.taza.me)**
+
 A simple dashboard overlaying the **CNN Fear & Greed Index** against the
 **S&P 500 index** over the past ~5 years. Updates itself once a day.
 
@@ -32,5 +34,4 @@ won't let the page load `data.json`.)
 - `scripts/fetch-data.js` — fetches and merges the two sources.
 - `.github/workflows/update-data.yml` — the daily job.
 
-No framework, no build step, no API keys. See `CLAUDE.md` for the technical details
-and data-source quirks.
+No framework, no build step, no API keys.
