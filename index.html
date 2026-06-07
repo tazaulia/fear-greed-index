@@ -83,9 +83,35 @@
   .state{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-size:14px; color:var(--body-grey); text-align:center; padding:0 24px; }
 
-  .source{ margin-top:16px; padding-top:12px; border-top:1px solid var(--hairline);
-    font-size:13px; color:var(--body-grey); }
+  .about-line{ margin-top:16px; padding-top:12px; border-top:1px solid var(--hairline); }
+  .about-trigger{
+    appearance:none; background:none; border:0; padding:0; cursor:pointer;
+    font-family:var(--sans); font-size:13px; color:var(--body-grey);
+    text-decoration:underline; transition:color 130ms ease;
+  }
+  .about-trigger:hover{ color:var(--red); }
+  .about-trigger:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
+
+  .source{ margin-top:6px; font-size:13px; color:var(--body-grey); }
   .source a{ color:inherit; text-decoration:underline; }
+
+  /* About modal */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(13,13,13,.45);
+    display:flex; align-items:center; justify-content:center; padding:24px; z-index:100; }
+  .modal-overlay[hidden]{ display:none; }
+  .modal{ position:relative; background:var(--canvas); border-top:2px solid var(--red);
+    max-width:520px; width:100%; max-height:85vh; overflow:auto;
+    padding:28px clamp(20px,4vw,32px); }
+  .modal p{ font-size:15px; color:var(--body-grey); }
+  .modal p:first-of-type{ padding-right:28px; }
+  .modal p + p{ margin-top:12px; }
+  .modal a{ color:inherit; text-decoration:underline; }
+  .modal-quote{ font-style:italic; }
+  .modal-x{ position:absolute; top:14px; right:16px; appearance:none; background:none;
+    border:0; cursor:pointer; font-family:var(--sans); font-size:24px; line-height:1;
+    color:var(--body-grey); transition:color 130ms ease; }
+  .modal-x:hover{ color:var(--red); }
+  .modal-x:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -132,8 +158,19 @@
     <div class="state" id="state">Loading data&hellip;</div>
   </div>
 
+  <p class="about-line">
+    <button type="button" class="about-trigger" onclick="openAbout()" aria-haspopup="dialog">What is the Fear &amp; Greed Index?</button>
+  </p>
   <p class="source" id="source">Source: <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN Business</a>; <a href="https://finance.yahoo.com/quote/%5EGSPC/" target="_blank" rel="noopener">Yahoo Finance</a> &middot; auto-updated daily</p>
 </main>
+
+<div class="modal-overlay" id="aboutModal" hidden onclick="if(event.target===this)closeAbout()">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="What is the Fear &amp; Greed Index?">
+    <button type="button" class="modal-x" aria-label="Close" onclick="closeAbout()">&times;</button>
+    <p><a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN's Fear &amp; Greed Index</a> distills market sentiment into a single 0&ndash;100 score from seven market indicators. Low = fear, high = greed. Extreme fear often clusters near market lows, extreme greed near highs.</p>
+    <p class="modal-quote">&ldquo;Be fearful when others are greedy, and greedy when others are fearful&rdquo; - Warren Buffet</p>
+  </div>
+</div>
 
 <script>
 let DATA = [];
@@ -258,6 +295,10 @@ async function load(){
     console.error('Failed to load data.json:', err);
   }
 }
+
+function openAbout(){ document.getElementById('aboutModal').hidden = false; }
+function closeAbout(){ document.getElementById('aboutModal').hidden = true; }
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeAbout(); });
 
 Chart.defaults.font.family = "'Source Sans 3', system-ui, Helvetica, Arial, sans-serif";
 Chart.defaults.color = '#595959';
