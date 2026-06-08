@@ -15,7 +15,8 @@ at draw time via `getComputedStyle`, so changing a token flows through everywher
 
 The page has three indicator stats above the chart (Previous close / One week ago / One
 month ago), populated from `data.json` rows without any extra fetch. Default time range
-is **1y**. Dates are formatted `en-GB` throughout.
+is **1y**. Dates are formatted `en-GB` throughout. A "What is the Fear & Greed Index?"
+link opens an explainer `<dialog>` modal (markup + logic inline in `index.html`).
 
 ## How it works
 ```
@@ -29,11 +30,17 @@ There is **no build step, no framework, no serverless function, and no npm
 dependency**. `scripts/fetch-data.js` runs on Node 20+ using the built-in `fetch`.
 
 ## Analytics
-**Vercel Web Analytics** is wired in via two `<script>` tags in `index.html`'s `<head>`
-(a `window.va` queue stub + a deferred `/_vercel/insights/script.js`). No npm package —
-the script is served by Vercel's edge at deploy time, so it only works on the deployed
-site and must be toggled on in the Vercel dashboard (Project → Analytics → Enable).
-Locally that path 404s, which is harmless.
+**Vercel Web Analytics** — two `<script>` tags in `index.html`'s `<head>` (a `window.va`
+stub + a deferred `/_vercel/insights/script.js`). No npm package; Vercel's edge serves the
+script at deploy time, so it only works on the deployed site and must be enabled in the
+dashboard (Project → Analytics). Locally that path 404s — harmless.
+
+## SEO / crawler files
+The site is indexable; `index.html`'s `<head>` carries meta description, canonical, and
+Open Graph + Twitter card tags. The production URL `https://fear-greed.taza.me/` is
+**hardcoded in three places** — the `<head>` tags (canonical + `og:`/`twitter:`),
+`robots.txt` (the `Sitemap:` line), and `sitemap.xml` (`<loc>`). If the domain ever
+changes, update all three. `og-image.png` is the 1200×630 social card.
 
 ## Files
 - `index.html` — markup + all chart logic. Reads `./data.json` at load. Also carries the
@@ -41,6 +48,8 @@ Locally that path 404s, which is harmless.
 - `data.json` — `{ updated, source, range, rows: [{ d, fg, sp500 }] }`. Generated; committed.
 - `scripts/fetch-data.js` — the only data-fetching code.
 - `.github/workflows/update-data.yml` — daily refresh.
+- `robots.txt`, `sitemap.xml`, `og-image.png` — SEO/crawler assets (see SEO section).
+- `favicon/` — icon set + `site.webmanifest`, linked from `index.html`'s `<head>`.
 
 ## Run locally
 ```bash
