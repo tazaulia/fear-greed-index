@@ -9,29 +9,32 @@ A simple dashboard overlaying the **CNN Fear & Greed Index** against the
 
 ## How it stays up to date
 A GitHub Action runs every day, pulls fresh numbers from CNN and Yahoo Finance,
-saves them into `data.json`, and commits the change. Vercel sees the commit and
-redeploys automatically. No manual steps, no spreadsheets, no CSV downloads.
+and saves them into a **Neon Postgres** database. The page reads from that database
+on the fly, so there are **no daily commits and no redeploys** — just fresh data.
+No manual steps, no spreadsheets, no CSV downloads.
 
 ## Preview it locally
-You need [Node.js](https://nodejs.org) (v20+) installed.
+You need [Node.js](https://nodejs.org) (v20+) and the [Vercel CLI](https://vercel.com/docs/cli).
 
 ```bash
-node scripts/fetch-data.js     # grab the latest data
-python3 -m http.server 8000    # serve the folder
+vercel env pull .env.local                          # grab the database URL once
+node --env-file=.env.local scripts/fetch-data.js    # load the latest data
+vercel dev                                          # serve the page + its data API
 ```
-Open <http://localhost:8000>. (Use the local server — opening the file directly
-won't let the page load `data.json`.)
+Open the URL `vercel dev` prints. (Use `vercel dev`, not a plain static server,
+so the data endpoint runs.)
 
 ## Deploy
 1. Push this repo to GitHub.
 2. In Vercel: **New Project → import this repo**. Framework preset: **Other**.
-   No build command. Output directory: the repo root (leave default).
-3. Deploy. Done — future daily data commits redeploy on their own.
+   No build command.
+3. Add a Neon database to the project (Storage → Neon) — it wires up the database
+   URL automatically. Deploy. Done.
 
 ## Under the hood
-- `index.html` — the whole page (chart logic + styling), draws from `data.json`.
-- `data.json` — the data, regenerated daily.
-- `scripts/fetch-data.js` — fetches and merges the two sources.
+- `index.html` — the whole page (chart logic + styling), draws from `/api/data`.
+- `api/data.js` — tiny function that reads the data out of Neon.
+- `scripts/fetch-data.js` — fetches and merges the two sources into Neon.
 - `.github/workflows/update-data.yml` — the daily job.
 
 No framework, no build step, no API keys.

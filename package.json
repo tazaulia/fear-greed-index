@@ -1,0 +1,12 @@
+{
+  "name": "fear-greed-index",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dashboard overlaying the CNN Fear & Greed Index against the S&P 500. Data lives in Neon Postgres.",
+  "scripts": {
+    "fetch": "node scripts/fetch-data.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0"
+  }
+}

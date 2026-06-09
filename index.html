@@ -294,7 +294,7 @@ function fillReading(valEl, zoneEl, row){
 async function load(){
   const stateEl = document.getElementById('state');
   try {
-    const res = await fetch('./data.json', {cache: 'no-cache'});
+    const res = await fetch('/api/data');
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     DATA = json.rows || [];
@@ -310,7 +310,7 @@ async function load(){
     draw();
   } catch (err) {
     stateEl.textContent = 'Could not load data. Please try again later.';
-    console.error('Failed to load data.json:', err);
+    console.error('Failed to load /api/data:', err);
   }
 }
 

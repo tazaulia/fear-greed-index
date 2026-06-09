@@ -1,16 +1,13 @@
 name: Update data
 
-# Refreshes data.json once a day. The commit it produces triggers Vercel's
-# auto-deploy, so the live site updates with no manual steps. Can also be run
-# on demand from the Actions tab (workflow_dispatch).
+# Refreshes the data in Neon once a day. The site reads from Neon at request
+# time (via the /api/data function), so there is NO commit and NO redeploy —
+# this job just upserts rows. Can also be run on demand from the Actions tab.
 on:
   schedule:
     # 22:30 UTC daily — comfortably after the US market close in both EST/EDT.
     - cron: '30 22 * * *'
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   update:
@@ -22,17 +19,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Fetch latest data
-        run: node scripts/fetch-data.js
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Commit if changed
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- data.json; then
-            echo "No data change — nothing to commit."
-          else
-            git add data.json
-            git commit -m "data: daily update"
-            git push
-          fi
+      - name: Fetch latest data into Neon
+        run: node scripts/fetch-data.js
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
