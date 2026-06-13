@@ -44,13 +44,18 @@
     --red:#e3120b;
     --fg:#2d6a9e;   /* Fear & Greed line */
     --sp:#a6a6a6;   /* S&P 500 line */
+    --xfear:#e3120b;  /* extreme fear  (0–24)  */
+    --fear:#e07a18;   /* fear          (25–44) */
+    --neutral:#595959;/* neutral       (45–55) */
+    --greed:#5aa173;  /* greed         (56–75) */
+    --xgreed:#137a43; /* extreme greed (76–100)*/
     --serif:'Source Serif 4', ui-serif, Georgia, serif;
     --sans:'Source Sans 3', system-ui, Helvetica, Arial, sans-serif;
   }
 
   *{box-sizing:border-box;margin:0;padding:0}
   html{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-  body{ font-family:var(--sans); background:var(--canvas); color:var(--ink); font-size:15px; line-height:1.45; }
+  body{ font-family:var(--sans); background:var(--canvas); color:var(--ink); font-size:15px; line-height:1.45; text-wrap:pretty; }
   .num{ font-variant-numeric:tabular-nums lining-nums; }
 
   main{
@@ -72,7 +77,7 @@
   .ind{ min-width:0; }
   .ind-label{ font-size:13px; color:var(--body-grey); }
   .ind-val{ font-family:var(--serif); font-weight:600; font-size:clamp(20px,4vw,24px); line-height:1.1; margin-top:2px; }
-  .ind-zone{ font-size:13px; color:var(--body-grey); }
+  .ind-zone{ font-size:13px; color:var(--body-grey); margin-top:1px; }
 
   /* Controls */
   .controls{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
@@ -80,9 +85,10 @@
   .ranges{ display:flex; }
   .ranges button{
     appearance:none; background:none; border:0; cursor:pointer;
+    display:inline-flex; align-items:center; min-height:40px;
     font-family:var(--sans); font-size:15px; font-weight:600; color:var(--ink);
     padding:9px 9px; line-height:1; border-bottom:2px solid transparent;
-    transition:color 130ms ease;
+    transition:color 130ms ease, scale 130ms ease;
   }
   .ranges button:first-child{ padding-left:0; }
   .ranges button:hover{ color:var(--red); }
@@ -112,21 +118,32 @@
 
   .source{ margin-top:6px; font-size:13px; color:var(--body-grey); }
   .source a{ color:inherit; text-decoration:underline; }
+  .credit{ margin-top:4px; font-size:13px; color:var(--body-grey); }
+  .credit a{ color:inherit; text-decoration:underline; transition:color 130ms ease; }
+  .credit a:hover{ color:var(--red); }
 
   /* About modal */
-  .modal-overlay{ position:fixed; inset:0; background:rgba(13,13,13,.45);
-    display:flex; align-items:center; justify-content:center; padding:24px; z-index:100; }
-  .modal-overlay[hidden]{ display:none; }
-  .modal{ position:relative; background:var(--canvas); border-top:2px solid var(--red);
-    max-width:520px; width:100%; max-height:85vh; overflow:auto;
-    padding:28px clamp(20px,4vw,32px); }
+  .modal{ position:relative; margin:auto; border:0; background:var(--canvas);
+    border-top:2px solid var(--red); max-width:520px; width:calc(100% - 48px);
+    max-height:85vh; overflow:auto; padding:28px clamp(20px,4vw,32px);
+    opacity:0; translate:0 8px;
+    transition:opacity 200ms ease, translate 200ms ease,
+      display 200ms allow-discrete, overlay 200ms allow-discrete; }
+  .modal[open]{ opacity:1; translate:0 0; }
+  @starting-style{ .modal[open]{ opacity:0; translate:0 8px; } }
+  .modal::backdrop{ background:rgba(13,13,13,.45); opacity:0;
+    transition:opacity 200ms ease, display 200ms allow-discrete, overlay 200ms allow-discrete; }
+  .modal[open]::backdrop{ opacity:1; }
+  @starting-style{ .modal[open]::backdrop{ opacity:0; } }
   .modal p{ font-size:15px; color:var(--body-grey); }
-  .modal p:first-of-type{ padding-right:28px; }
+  .modal p:first-of-type{ padding-right:40px; }
   .modal p + p{ margin-top:12px; }
   .modal a{ color:inherit; text-decoration:underline; }
   .modal-quote{ font-style:italic; }
-  .modal-x{ position:absolute; top:14px; right:16px; appearance:none; background:none;
-    border:0; cursor:pointer; font-family:var(--sans); font-size:24px; line-height:1;
+  .modal-x{ position:absolute; top:8px; right:8px; width:40px; height:40px;
+    display:flex; align-items:center; justify-content:center;
+    appearance:none; background:none; border:0; cursor:pointer;
+    font-family:var(--sans); font-size:24px; line-height:1;
     color:var(--body-grey); transition:color 130ms ease; }
   .modal-x:hover{ color:var(--red); }
   .modal-x:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
@@ -180,22 +197,54 @@
     <button type="button" class="about-trigger" onclick="openAbout()" aria-haspopup="dialog">What is the Fear &amp; Greed Index?</button>
   </p>
   <p class="source" id="source">Source: <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN Business</a>; <a href="https://finance.yahoo.com/quote/%5EGSPC/" target="_blank" rel="noopener">Yahoo Finance</a> &middot; auto-updated daily</p>
+  <p class="credit">Made by <a href="https://www.taza.me" target="_blank" rel="noopener">Taza Aulia</a> in Singapore</p>
 </main>
 
-<div class="modal-overlay" id="aboutModal" hidden onclick="if(event.target===this)closeAbout()">
-  <div class="modal" role="dialog" aria-modal="true" aria-label="What is the Fear &amp; Greed Index?">
-    <button type="button" class="modal-x" aria-label="Close" onclick="closeAbout()">&times;</button>
-    <p><a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN's Fear &amp; Greed Index</a> distills market sentiment into a single 0&ndash;100 score from seven market indicators. Low = fear, high = greed. Extreme fear often clusters near market lows, extreme greed near highs.</p>
-    <p class="modal-quote">&ldquo;Be fearful when others are greedy, and greedy when others are fearful&rdquo; - Warren Buffet</p>
-  </div>
-</div>
+<dialog class="modal" id="aboutModal" aria-label="What is the Fear &amp; Greed Index?">
+  <button type="button" class="modal-x" aria-label="Close" onclick="closeAbout()">&times;</button>
+  <p><a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN's Fear &amp; Greed Index</a> distills market sentiment into a single 0&ndash;100 score from seven market indicators. Low = fear, high = greed. Extreme fear often clusters near market lows, extreme greed near highs.</p>
+  <p class="modal-quote">&ldquo;Be fearful when others are greedy, and greedy when others are fearful&rdquo; - Warren Buffet</p>
+</dialog>
 
 <script>
 let DATA = [];
 let chart, activeRange = 365;
 
 function zl(v){return v<=24?'Extreme fear':v<=44?'Fear':v<=55?'Neutral':v<=75?'Greed':'Extreme greed'}
+function zc(v){return v<=24?css('--xfear'):v<=44?css('--fear'):v<=55?css('--neutral'):v<=75?css('--greed'):css('--xgreed')}
+
+// Round [rawMin,rawMax] outward to a "nice" step that spans exactly 4 divisions (5 ticks),
+// so the right axis lines up with the F&G axis's 0/25/50/75/100 gridlines.
+function spAxis(rawMin, rawMax){
+  const span = rawMax - rawMin || 1;
+  const pow = Math.pow(10, Math.floor(Math.log10(span / 4)));
+  for(const m of [1, 2, 2.5, 5, 10, 20]){
+    const step = m * pow;
+    const min = Math.floor(rawMin / step) * step;
+    if(min + 4 * step >= rawMax) return {min, max: min + 4 * step, step};
+  }
+  const step = 20 * pow, min = Math.floor(rawMin / step) * step;
+  return {min, max: min + 4 * step, step};
+}
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// Faint vertical guide line at the hovered date, so both series read off the same point.
+const crosshair = {
+  id: 'crosshair',
+  afterDatasetsDraw(c){
+    const a = c.tooltip && c.tooltip._active;
+    if(!a || !a.length) return;
+    const x = a[0].element.x, {top, bottom} = c.chartArea, ctx = c.ctx;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, bottom);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = css('--hairline');
+    ctx.stroke();
+    ctx.restore();
+  }
+};
 
 function go(days){
   activeRange = days;
@@ -215,10 +264,15 @@ function draw(){
   const fg = css('--fg'), sp = css('--sp'), ink = css('--ink'), grey = css('--body-grey'), hair = css('--hairline');
   const spVals = sl.map(r => r.sp500);
   const pad = (Math.max(...spVals) - Math.min(...spVals)) * 0.06;
+  // The left (F&G) axis draws 5 gridlines at 0/25/50/75/100 — i.e. 4 equal divisions.
+  // Snap the right (S&P) axis to a round step that also spans exactly 4 divisions, so
+  // its ticks land on those same 5 lines and read clean at every timeframe.
+  const spA = spAxis(Math.min(...spVals) - pad, Math.max(...spVals) + pad);
 
   if(chart) chart.destroy();
   chart = new Chart(document.getElementById('c'), {
     type: 'line',
+    plugins: [crosshair],
     data: {
       labels: sl.map(r => r.d),
       datasets: [
@@ -231,7 +285,7 @@ function draw(){
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: false,
+      animation: {duration: 240, easing: 'easeOutQuart'},
       interaction: {mode: 'index', intersect: false},
       plugins: {
         legend: {display: false},
@@ -271,8 +325,9 @@ function draw(){
         },
         ySP: {
           type:'linear', position:'right',
-          min: Math.floor(Math.min(...spVals) - pad), max: Math.ceil(Math.max(...spVals) + pad),
-          ticks:{color: sp, font:{size:11}, callback: v => Math.round(v).toLocaleString('en-US')},
+          min: spA.min, max: spA.max,
+          ticks:{color: sp, font:{size:11}, stepSize: spA.step,
+            callback: v => Math.round(v).toLocaleString('en-US')},
           grid:{drawOnChartArea:false}, border:{display:false},
           title:{display:true, text:'S&P 500', color: sp, font:{size:11, weight:'600'}}
         }
@@ -287,8 +342,11 @@ function rowAtOrBefore(target){
 }
 function shiftDays(iso, days){ const x = new Date(iso); x.setDate(x.getDate() - days); return x.toISOString().slice(0,10); }
 function fillReading(valEl, zoneEl, row){
-  document.getElementById(valEl).textContent = Math.round(row.fg);
-  document.getElementById(zoneEl).textContent = zl(row.fg);
+  const v = Math.round(row.fg);
+  document.getElementById(valEl).textContent = v;
+  const z = document.getElementById(zoneEl);
+  z.textContent = zl(row.fg);
+  z.style.color = zc(row.fg);
 }
 
 async function load(){
@@ -314,9 +372,14 @@ async function load(){
   }
 }
 
-function openAbout(){ document.getElementById('aboutModal').hidden = false; }
-function closeAbout(){ document.getElementById('aboutModal').hidden = true; }
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeAbout(); });
+const aboutModal = document.getElementById('aboutModal');
+function openAbout(){ aboutModal.showModal(); }
+function closeAbout(){ aboutModal.close(); }
+// Click on the backdrop (outside the padded content box) closes the dialog.
+aboutModal.addEventListener('click', e => {
+  const r = aboutModal.getBoundingClientRect();
+  if(e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closeAbout();
+});
 
 Chart.defaults.font.family = "'Source Sans 3', system-ui, Helvetica, Arial, sans-serif";
 Chart.defaults.color = '#595959';
