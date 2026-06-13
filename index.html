@@ -107,20 +107,26 @@
   .state{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-size:14px; color:var(--body-grey); text-align:center; padding:0 24px; }
 
-  .about-line{ margin-top:16px; padding-top:12px; border-top:1px solid var(--hairline); }
+  /* "What is this?" link — its own line under the headline */
   .about-trigger{
     appearance:none; background:none; border:0; padding:0; cursor:pointer;
+    margin-top:10px;
     font-family:var(--sans); font-size:13px; color:var(--body-grey);
     text-decoration:underline; transition:color 130ms ease;
   }
   .about-trigger:hover{ color:var(--red); }
   .about-trigger:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
 
-  .source{ margin-top:6px; font-size:13px; color:var(--body-grey); }
-  .source a{ color:inherit; text-decoration:underline; }
-  .credit{ margin-top:4px; font-size:13px; color:var(--body-grey); }
-  .credit a{ color:inherit; text-decoration:underline; transition:color 130ms ease; }
-  .credit a:hover{ color:var(--red); }
+  /* Source caption — quiet attribution directly under the chart */
+  .chart-note{ margin-top:10px; font-size:12px; color:var(--body-grey); }
+  .chart-note a{ color:inherit; text-decoration:underline; transition:color 130ms ease; }
+  .chart-note a:hover{ color:var(--red); }
+
+  /* Page footer — set off from the content */
+  .site-footer{ margin-top:28px; padding-top:14px; border-top:1px solid var(--hairline);
+    font-size:13px; color:var(--body-grey); }
+  .site-footer a{ color:inherit; text-decoration:underline; transition:color 130ms ease; }
+  .site-footer a:hover{ color:var(--red); }
 
   /* About modal */
   .modal{ position:relative; margin:auto; border:0; background:var(--canvas);
@@ -154,6 +160,7 @@
   <header>
     <div class="kicker">Markets &middot; daily sentiment</div>
     <h1>Fear &amp; Greed Index</h1>
+    <button type="button" class="about-trigger" onclick="openAbout()" aria-haspopup="dialog">What is this?</button>
   </header>
 
   <section class="indicators" id="indicators" aria-label="Fear &amp; Greed readings">
@@ -193,11 +200,9 @@
     <div class="state" id="state">Loading data&hellip;</div>
   </div>
 
-  <p class="about-line">
-    <button type="button" class="about-trigger" onclick="openAbout()" aria-haspopup="dialog">What is the Fear &amp; Greed Index?</button>
-  </p>
-  <p class="source" id="source">Source: <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN Business</a>; <a href="https://finance.yahoo.com/quote/%5EGSPC/" target="_blank" rel="noopener">Yahoo Finance</a> &middot; auto-updated daily</p>
-  <p class="credit">Made by <a href="https://www.taza.me" target="_blank" rel="noopener">Taza Aulia</a> in Singapore</p>
+  <p class="chart-note">Sources: <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN Business</a>, <a href="https://finance.yahoo.com/quote/%5EGSPC/" target="_blank" rel="noopener">Yahoo Finance</a> &middot; updated daily</p>
+
+  <footer class="site-footer">Made by <a href="https://www.taza.me" target="_blank" rel="noopener">Taza Aulia</a> in Singapore</footer>
 </main>
 
 <dialog class="modal" id="aboutModal" aria-label="What is the Fear &amp; Greed Index?">
