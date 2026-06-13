@@ -231,6 +231,35 @@ function spAxis(rawMin, rawMax){
   const step = 20 * pow, min = Math.floor(rawMin / step) * step;
   return {min, max: min + 4 * step, step};
 }
+
+// Calendar-aligned x-axis ticks. Rather than evenly-spaced data indices (which
+// crowd as "Mon YYYYMon YYYY…" on long ranges), pin ticks to the first trading
+// day of each calendar period and print the year only when it changes — so the
+// labels stay narrow and never collide, at every timeframe.
+function xTicks(rows, range){
+  const starts = [];                       // first row index of each calendar month
+  let prevYM = '';
+  for(let i = 0; i < rows.length; i++){
+    const ym = rows[i].d.slice(0, 7);
+    if(ym !== prevYM){ starts.push(i); prevYM = ym; }
+  }
+  let picked;
+  if(range > 730){                          // 5y → one tick per year (January)
+    picked = starts.filter(i => rows[i].d.slice(5, 7) === '01');
+    if(picked.length < 2) picked = starts.filter((_, k) => k % 12 === 0);
+  } else {                                  // every 1 / 2 / 4 months
+    const every = range <= 180 ? 1 : range <= 365 ? 2 : 4;
+    picked = starts.filter((_, k) => k % every === 0);
+  }
+  const labels = picked.map((idx, k) => {
+    const d = new Date(rows[idx].d), yr = d.getFullYear();
+    if(range > 730) return String(yr);
+    const mon = d.toLocaleDateString('en-GB', {month: 'short'});
+    const prevYr = k > 0 ? new Date(rows[picked[k - 1]].d).getFullYear() : null;
+    return (k === 0 || yr !== prevYr) ? `${mon} ${yr}` : mon;
+  });
+  return {indices: picked, labels};
+}
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
 // Faint vertical guide line at the hovered date, so both series read off the same point.
@@ -273,6 +302,7 @@ function draw(){
   // Snap the right (S&P) axis to a round step that also spans exactly 4 divisions, so
   // its ticks land on those same 5 lines and read clean at every timeframe.
   const spA = spAxis(Math.min(...spVals) - pad, Math.max(...spVals) + pad);
+  const xt = xTicks(sl, activeRange);
 
   if(chart) chart.destroy();
   chart = new Chart(document.getElementById('c'), {
@@ -310,15 +340,9 @@ function draw(){
       },
       scales: {
         x: {
-          ticks: {color: grey, maxTicksLimit: activeRange <= 90 ? 6 : activeRange <= 365 ? 8 : 10,
-            maxRotation: 0, font: {size: 11},
-            callback: (_, i) => {
-              if(i >= sl.length) return '';
-              const d = new Date(sl[i].d);
-              return activeRange <= 180
-                ? d.toLocaleDateString('en-GB', {month:'short', day:'numeric'})
-                : d.toLocaleDateString('en-GB', {month:'short', year:'numeric'});
-            }},
+          afterBuildTicks: axis => { axis.ticks = xt.indices.map(i => ({value: i})); },
+          ticks: {color: grey, autoSkip: false, maxRotation: 0, font: {size: 11},
+            callback: (_, i) => xt.labels[i] ?? ''},
           grid: {display: false}, border: {color: hair}
         },
         yFG: {
