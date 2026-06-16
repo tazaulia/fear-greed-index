@@ -5,8 +5,15 @@ name: Update data
 # this job just upserts rows. Can also be run on demand from the Actions tab.
 on:
   schedule:
-    # 22:30 UTC daily — comfortably after the US market close in both EST/EDT.
-    - cron: '30 22 * * *'
+    # 21:00 UTC daily = 4:00 PM EST (winter) / 5:00 PM EDT (summer). GitHub cron
+    # is UTC-only (no DST), so the ET time swings an hour across the year; 21:00
+    # lands right at the 4 PM ET close in winter. In practice GitHub's scheduled
+    # crons run LATE — observed ~20-30 min behind schedule — so this job really
+    # fires around 21:20-21:30+ UTC, comfortably after the close (and close to
+    # the 21:30 cron-job.org Telegram trigger; see CLAUDE.md). Don't lower it
+    # past 21:00 or winter runs would risk preceding the close (a fast cron +
+    # an on-time day) and grab a mid-session value.
+    - cron: '0 21 * * *'
   workflow_dispatch:
 
 jobs:
