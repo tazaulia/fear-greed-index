@@ -34,9 +34,17 @@ The site is indexable; `index.html`'s `<head>` carries meta description, canonic
 - `api/data.js` — read-only Vercel function. `SELECT`s from Neon and returns `{ updated, source, range, rows: [{ d, fg, sp500 }] }` (the shape the page expects), with a CDN `Cache-Control` header. Casts `d::text` + `sp500::float8` so the JSON matches what the chart needs.
 - `scripts/fetch-data.js` — the only data-fetching code; upserts into Neon.
 - `package.json` / `package-lock.json` — the single `@neondatabase/serverless` dep.
-- `.github/workflows/update-data.yml` — daily refresh (upsert only; no commit).
+- `.github/workflows/update-data.yml` — daily refresh (upsert only; no commit), plus a keepalive step (see below).
 - `robots.txt`, `sitemap.xml`, `og-image.png` — SEO/crawler assets (see SEO section).
 - `favicon/` — icon set + `site.webmanifest`, linked from `index.html`'s `<head>`.
+
+## Keepalive (why the workflow pushes empty commits)
+
+GitHub disables a scheduled workflow after **60 days of repository inactivity** — and only *commits* count as activity, not the scheduled runs themselves. Since the June 2026 move to Neon, this job stopped committing anything (it just upserts rows), so the repo goes quiet and the cron was heading for a silent shutoff: the site would keep serving, permanently frozen on the last stored value. GitHub emails the repo owner a few days beforehand; that warning arrived on **11 Aug 2026** and prompted this fix.
+
+The last step of `update-data.yml` handles it: if the newest commit is 30+ days old, it pushes an **empty commit** (`chore: keepalive`) as `github-actions[bot]`, which resets GitHub's counter. That's roughly 12 no-op commits a year and no other effect — pushes made with `GITHUB_TOKEN` don't trigger other workflows, and the site doesn't redeploy on commit anyway. The step needs `permissions: contents: write` on the job, which is why that block is there. It runs under `if: always()` so a failed CNN fetch can't compound into a disabled cron.
+
+If you ever see this warning email again, the keepalive has broken — check the step's log in the last few runs rather than just clicking "enable" in the email.
 
 ## Run locally
 ```bash

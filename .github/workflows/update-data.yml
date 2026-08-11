@@ -19,6 +19,9 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+    permissions:
+      # needed by the keepalive step below, which pushes an empty commit
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -33,3 +36,24 @@ jobs:
         run: node scripts/fetch-data.js
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # GitHub disables scheduled workflows after 60 days with no commits to the
+      # repo (the scheduled runs themselves do NOT count as activity). Since this
+      # job only upserts into Neon and never commits, the repo goes quiet and the
+      # workflow would silently switch itself off — the site would keep serving,
+      # frozen on the last stored value. So: once the repo has been quiet for 30
+      # days, push an empty commit to reset GitHub's counter. Runs even if the
+      # fetch above failed, so a bad CNN day can't snowball into a dead cron.
+      - name: Keep the schedule alive
+        if: always()
+        run: |
+          age_days=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
+          if [ "$age_days" -ge 30 ]; then
+            echo "Last commit ${age_days}d ago - pushing keepalive commit."
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "chore: keepalive (repo quiet ${age_days}d)"
+            git push
+          else
+            echo "Last commit ${age_days}d ago - no keepalive needed."
+          fi
