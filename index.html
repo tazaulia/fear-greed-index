@@ -73,11 +73,16 @@
   }
 
   /* Indicators */
-  .indicators{ display:flex; gap:clamp(20px,5vw,44px); margin:20px 0 24px; }
+  .indicators{ display:flex; align-items:flex-start; gap:clamp(20px,5vw,44px); margin:20px 0 10px; }
   .ind{ min-width:0; }
   .ind-label{ font-size:13px; color:var(--body-grey); }
   .ind-val{ font-family:var(--serif); font-weight:600; font-size:clamp(20px,4vw,24px); line-height:1.1; margin-top:2px; }
   .ind-zone{ font-size:13px; color:var(--body-grey); margin-top:1px; }
+  /* Today's reading is the headline number; the week/month readings are context. */
+  .ind-hero .ind-val{ font-size:clamp(44px,10vw,60px); line-height:1; }
+  .ind-hero .ind-zone{ font-weight:600; }
+  .ind-delta{ font-size:13px; color:var(--body-grey); margin-top:1px; }
+  .scale-note{ font-size:12px; color:var(--body-grey); margin-bottom:20px; }
 
   /* Controls */
   .controls{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
@@ -103,7 +108,8 @@
   .legend .sw.sp{ background:var(--sp); }
 
   /* Chart */
-  .wrap{ position:relative; width:100%; height:clamp(340px,46vw,560px); margin-top:18px; }
+  .chart-how{ margin-top:14px; font-size:13px; color:var(--body-grey); }
+  .wrap{ position:relative; width:100%; height:clamp(420px,46vw,560px); margin-top:12px; }
   .state{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-size:14px; color:var(--body-grey); text-align:center; padding:0 24px; }
 
@@ -146,6 +152,7 @@
   .modal p + p{ margin-top:12px; }
   .modal a{ color:inherit; text-decoration:underline; }
   .modal-quote{ font-style:italic; }
+  .modal-attrib{ display:block; font-style:normal; margin-top:2px; }
   .modal-x{ position:absolute; top:8px; right:8px; width:40px; height:40px;
     display:flex; align-items:center; justify-content:center;
     appearance:none; background:none; border:0; cursor:pointer;
@@ -158,16 +165,17 @@
 <body>
 <main>
   <header>
-    <div class="kicker">Markets &middot; daily sentiment</div>
+    <div class="kicker">US stocks &middot; investor mood</div>
     <h1>Fear &amp; Greed Index</h1>
-    <button type="button" class="about-trigger" onclick="openAbout()" aria-haspopup="dialog">What is this?</button>
+    <button type="button" class="about-trigger" onclick="openAbout()" aria-haspopup="dialog">What does the score mean?</button>
   </header>
 
   <section class="indicators" id="indicators" aria-label="Fear &amp; Greed readings">
-    <div class="ind">
-      <div class="ind-label">Previous close</div>
+    <div class="ind ind-hero">
+      <div class="ind-label" id="l-now">Latest</div>
       <div class="ind-val num" id="v-now">&mdash;</div>
       <div class="ind-zone" id="z-now">&nbsp;</div>
+      <div class="ind-delta num" id="d-now">&nbsp;</div>
     </div>
     <div class="ind">
       <div class="ind-label">One week ago</div>
@@ -180,6 +188,7 @@
       <div class="ind-zone" id="z-month">&nbsp;</div>
     </div>
   </section>
+  <p class="scale-note">0 = extreme fear &middot; 100 = extreme greed</p>
 
   <div class="controls">
     <div class="ranges" role="group" aria-label="Time range">
@@ -191,24 +200,28 @@
     </div>
     <div class="legend">
       <span class="li"><span class="sw fg"></span>Fear &amp; Greed</span>
-      <span class="li"><span class="sw sp"></span>S&amp;P 500</span>
+      <span class="li"><span class="sw sp"></span>S&amp;P 500 (US stock market)</span>
     </div>
   </div>
+
+  <p class="chart-how">When the blue line drops low, investors are scared. Compare it with what the grey line (prices) did next.</p>
 
   <div class="wrap">
     <canvas id="c" role="img" aria-label="CNN Fear & Greed Index versus the S&P 500, daily values"></canvas>
     <div class="state" id="state">Loading data&hellip;</div>
   </div>
 
-  <p class="chart-note">Sources: <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN Business</a>, <a href="https://finance.yahoo.com/quote/%5EGSPC/" target="_blank" rel="noopener">Yahoo Finance</a> &middot; updated daily</p>
+  <p class="chart-note">Sources: <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN Business</a>, <a href="https://finance.yahoo.com/quote/%5EGSPC/" target="_blank" rel="noopener">Yahoo Finance</a> &middot; updated after each US trading day</p>
 
-  <footer class="site-footer">Made by <a href="https://www.taza.me" target="_blank" rel="noopener">Taza Aulia</a> in Singapore</footer>
+  <footer class="site-footer">Made by <a href="https://www.taza.me" target="_blank" rel="noopener">Taza Aulia</a> in Singapore &middot; For information only, not investment advice</footer>
 </main>
 
-<dialog class="modal" id="aboutModal" aria-label="What is the Fear &amp; Greed Index?">
+<dialog class="modal" id="aboutModal" aria-label="What does the Fear &amp; Greed score mean?">
   <button type="button" class="modal-x" aria-label="Close" onclick="closeAbout()">&times;</button>
-  <p><a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN's Fear &amp; Greed Index</a> distills market sentiment into a single 0&ndash;100 score from seven market indicators. Low = fear, high = greed. Extreme fear often clusters near market lows, extreme greed near highs.</p>
-  <p class="modal-quote">&ldquo;Be fearful when others are greedy, and greedy when others are fearful&rdquo; - Warren Buffet</p>
+  <p>The <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">Fear &amp; Greed Index</a> is a daily score from 0 to 100, published by CNN. It measures how nervous or confident US stock investors are, using seven signals, such as how fast prices are moving and how much investors are paying to protect themselves against losses.</p>
+  <p>Below 25 is extreme fear. Above 75 is extreme greed. In the past, extreme fear has often shown up near market bottoms, and extreme greed near market tops. It doesn't predict what happens next.</p>
+  <p>The S&amp;P 500 tracks the 500 largest US companies, so it's a common stand-in for the US stock market as a whole.</p>
+  <p class="modal-quote">&ldquo;Be fearful when others are greedy, and greedy when others are fearful.&rdquo;<span class="modal-attrib">Warren Buffett</span></p>
 </dialog>
 
 <script>
@@ -236,19 +249,27 @@ function spAxis(rawMin, rawMax){
 // crowd as "Mon YYYYMon YYYY…" on long ranges), pin ticks to the first trading
 // day of each calendar period and print the year only when it changes — so the
 // labels stay narrow and never collide, at every timeframe.
-function xTicks(rows, range){
+// `width` is the chart's pixel width: on narrow (phone) screens we space the
+// ticks further apart so labels like "Nov 2025" never run into each other.
+function xTicks(rows, range, width){
   const starts = [];                       // first row index of each calendar month
   let prevYM = '';
   for(let i = 0; i < rows.length; i++){
     const ym = rows[i].d.slice(0, 7);
     if(ym !== prevYM){ starts.push(i); prevYM = ym; }
   }
+  // The range usually starts mid-month; a tick there would sit too close to the
+  // next month's tick, so drop that partial first month.
+  if(starts.length > 2 && +rows[0].d.slice(8, 10) > 7) starts.shift();
+  const slots = Math.max(3, Math.floor((width - 90) / 64));   // labels that fit side by side
   let picked;
   if(range > 730){                          // 5y → one tick per year (January)
     picked = starts.filter(i => rows[i].d.slice(5, 7) === '01');
     if(picked.length < 2) picked = starts.filter((_, k) => k % 12 === 0);
-  } else {                                  // every 1 / 2 / 4 months
-    const every = range <= 180 ? 1 : range <= 365 ? 2 : 4;
+    if(picked.length > slots) picked = picked.filter((_, k) => k % 2 === 0);
+  } else {                                  // every 1 / 2 / 4 months, wider if space is tight
+    const base = range <= 180 ? 1 : range <= 365 ? 2 : 4;
+    const every = [1, 2, 3, 4, 6, 12].find(e => e >= base && Math.ceil(starts.length / e) <= slots) || 12;
     picked = starts.filter((_, k) => k % every === 0);
   }
   const labels = picked.map((idx, k) => {
@@ -280,6 +301,73 @@ const crosshair = {
   }
 };
 
+// Hex colour → rgba() string with the given opacity.
+function alpha(hex, a){
+  const n = parseInt(hex.replace('#', ''), 16);
+  return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+}
+
+// Faint shaded bands behind the lines for the two extreme zones, each with a small
+// label, so you can see at a glance when the market tipped into either extreme.
+const zoneBands = {
+  id: 'zoneBands',
+  beforeDatasetsDraw(c){
+    const y = c.scales.yFG, {left, right} = c.chartArea, ctx = c.ctx;
+    const bands = [
+      {from: 0,  to: 25,  color: css('--xfear'),  label: 'Extreme fear',  labelY: y.getPixelForValue(0) - 6},
+      {from: 75, to: 100, color: css('--xgreed'), label: 'Extreme greed', labelY: y.getPixelForValue(100) + 14}
+    ];
+    ctx.save();
+    for(const b of bands){
+      const top = y.getPixelForValue(b.to), bottom = y.getPixelForValue(b.from);
+      ctx.fillStyle = alpha(b.color, 0.06);
+      ctx.fillRect(left, top, right - left, bottom - top);
+      ctx.fillStyle = alpha(b.color, 0.75);
+      ctx.font = "600 11px 'Source Sans 3', system-ui, sans-serif";
+      ctx.textAlign = 'left';
+      ctx.fillText(b.label, left + 6, b.labelY);
+    }
+    ctx.restore();
+  }
+};
+
+// Dot + value on the latest Fear & Greed reading, so "where we are now" stands out.
+const endPoint = {
+  id: 'endPoint',
+  afterDatasetsDraw(c){
+    const meta = c.getDatasetMeta(0), pt = meta.data[meta.data.length - 1];
+    if(!pt) return;
+    const v = Math.round(c.data.datasets[0].data[meta.data.length - 1]);
+    const ctx = c.ctx, color = css('--fg');
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
+    // Value in a small white tag just above-left of the dot (below it if near the top),
+    // so the lines never run through the number.
+    ctx.font = "700 13px 'Source Sans 3', system-ui, sans-serif";
+    const label = String(v), w = ctx.measureText(label).width + 10, h = 18;
+    const bx = pt.x - 8 - w;
+    const by = pt.y - 10 - h < c.chartArea.top ? pt.y + 10 : pt.y - 10 - h;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, w, h, 3);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, bx + w / 2, by + h / 2 + 1);
+    ctx.restore();
+  }
+};
+
 function go(days){
   activeRange = days;
   ['90','180','365','730','1825'].forEach(d => {
@@ -302,12 +390,12 @@ function draw(){
   // Snap the right (S&P) axis to a round step that also spans exactly 4 divisions, so
   // its ticks land on those same 5 lines and read clean at every timeframe.
   const spA = spAxis(Math.min(...spVals) - pad, Math.max(...spVals) + pad);
-  const xt = xTicks(sl, activeRange);
+  const xt = xTicks(sl, activeRange, document.querySelector('.wrap').clientWidth);
 
   if(chart) chart.destroy();
   chart = new Chart(document.getElementById('c'), {
     type: 'line',
-    plugins: [crosshair],
+    plugins: [zoneBands, crosshair, endPoint],
     data: {
       labels: sl.map(r => r.d),
       datasets: [
@@ -333,8 +421,8 @@ function draw(){
             title: items => new Date(items[0].label).toLocaleDateString('en-GB',
               {day:'numeric', month:'short', year:'numeric'}),
             label: item => item.datasetIndex === 0
-              ? `F&G: ${Math.round(item.raw)} (${zl(item.raw)})`
-              : `S&P: ${item.raw.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`
+              ? `Fear & Greed: ${Math.round(item.raw)} (${zl(item.raw)})`
+              : `S&P 500: ${item.raw.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`
           }
         }
       },
@@ -389,14 +477,22 @@ async function load(){
 
     const last = DATA[DATA.length - 1];
 
+    const week = rowAtOrBefore(shiftDays(last.d, 7));
     fillReading('v-now',   'z-now',   last);
-    fillReading('v-week',  'z-week',  rowAtOrBefore(shiftDays(last.d, 7)));
+    fillReading('v-week',  'z-week',  week);
     fillReading('v-month', 'z-month', rowAtOrBefore(shiftDays(last.d, 30)));
+
+    document.getElementById('l-now').textContent = 'Latest (' +
+      new Date(last.d).toLocaleDateString('en-GB', {day:'numeric', month:'short'}) + ')';
+    const diff = Math.round(last.fg) - Math.round(week.fg), dEl = document.getElementById('d-now');
+    dEl.textContent = diff === 0 ? 'Same as last week'
+      : (diff > 0 ? '+' : '−') + Math.abs(diff) + ' since last week';
+    if(diff) dEl.style.color = diff > 0 ? css('--xgreed') : css('--red');
 
     stateEl.style.display = 'none';
     draw();
   } catch (err) {
-    stateEl.textContent = 'Could not load data. Please try again later.';
+    stateEl.textContent = 'Couldn’t load the latest data. Refresh the page or check back in a few minutes.';
     console.error('Failed to load /api/data:', err);
   }
 }
@@ -419,6 +515,16 @@ document.addEventListener('touchstart', e => {
   chart.tooltip.setActiveElements([], {x: 0, y: 0});
   chart.update('none');
 }, {passive: true});
+
+// Redraw when the window is resized enough to change how many date labels fit.
+let resizeTimer, lastWidth = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const w = document.querySelector('.wrap').clientWidth;
+    if(DATA.length && Math.abs(w - lastWidth) > 40){ lastWidth = w; draw(); }
+  }, 200);
+});
 
 load();
 </script>
