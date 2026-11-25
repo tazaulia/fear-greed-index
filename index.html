@@ -65,7 +65,6 @@
   }
 
   /* Header */
-  .kicker{ font-weight:600; font-size:14px; color:var(--red); margin-bottom:6px; }
   h1{
     font-family:var(--serif); font-weight:700;
     font-size:clamp(26px,5vw,36px); line-height:1.1;
@@ -73,7 +72,7 @@
   }
 
   /* Indicators */
-  .indicators{ display:flex; align-items:flex-start; gap:clamp(20px,5vw,44px); margin:20px 0 10px; }
+  .indicators{ display:flex; align-items:flex-start; gap:clamp(20px,5vw,44px); margin:20px 0 24px; }
   .ind{ min-width:0; }
   .ind-label{ font-size:13px; color:var(--body-grey); }
   .ind-val{ font-family:var(--serif); font-weight:600; font-size:clamp(20px,4vw,24px); line-height:1.1; margin-top:2px; }
@@ -82,7 +81,6 @@
   .ind-hero .ind-val{ font-size:clamp(44px,10vw,60px); line-height:1; }
   .ind-hero .ind-zone{ font-weight:600; }
   .ind-delta{ font-size:13px; color:var(--body-grey); margin-top:1px; }
-  .scale-note{ font-size:12px; color:var(--body-grey); margin-bottom:20px; }
 
   /* Controls */
   .controls{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
@@ -108,8 +106,7 @@
   .legend .sw.sp{ background:var(--sp); }
 
   /* Chart */
-  .chart-how{ margin-top:14px; font-size:13px; color:var(--body-grey); }
-  .wrap{ position:relative; width:100%; height:clamp(420px,46vw,560px); margin-top:12px; }
+  .wrap{ position:relative; width:100%; height:clamp(420px,46vw,560px); margin-top:18px; }
   .state{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-size:14px; color:var(--body-grey); text-align:center; padding:0 24px; }
 
@@ -165,7 +162,6 @@
 <body>
 <main>
   <header>
-    <div class="kicker">US stocks &middot; investor mood</div>
     <h1>Fear &amp; Greed Index</h1>
     <button type="button" class="about-trigger" onclick="openAbout()" aria-haspopup="dialog">What does the score mean?</button>
   </header>
@@ -188,7 +184,6 @@
       <div class="ind-zone" id="z-month">&nbsp;</div>
     </div>
   </section>
-  <p class="scale-note">0 = extreme fear &middot; 100 = extreme greed</p>
 
   <div class="controls">
     <div class="ranges" role="group" aria-label="Time range">
@@ -200,11 +195,9 @@
     </div>
     <div class="legend">
       <span class="li"><span class="sw fg"></span>Fear &amp; Greed</span>
-      <span class="li"><span class="sw sp"></span>S&amp;P 500 (US stock market)</span>
+      <span class="li"><span class="sw sp"></span>S&amp;P 500</span>
     </div>
   </div>
-
-  <p class="chart-how">When the blue line drops low, investors are scared. Compare it with what the grey line (prices) did next.</p>
 
   <div class="wrap">
     <canvas id="c" role="img" aria-label="CNN Fear & Greed Index versus the S&P 500, daily values"></canvas>
@@ -213,7 +206,7 @@
 
   <p class="chart-note">Sources: <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN Business</a>, <a href="https://finance.yahoo.com/quote/%5EGSPC/" target="_blank" rel="noopener">Yahoo Finance</a> &middot; updated after each US trading day</p>
 
-  <footer class="site-footer">Made by <a href="https://www.taza.me" target="_blank" rel="noopener">Taza Aulia</a> in Singapore &middot; For information only, not investment advice</footer>
+  <footer class="site-footer">Made by <a href="https://www.taza.me" target="_blank" rel="noopener">Taza Aulia</a> in Singapore</footer>
 </main>
 
 <dialog class="modal" id="aboutModal" aria-label="What does the Fear &amp; Greed score mean?">
@@ -307,8 +300,8 @@ function alpha(hex, a){
   return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
 }
 
-// Faint shaded bands behind the lines for the two extreme zones, each with a small
-// label, so you can see at a glance when the market tipped into either extreme.
+// Faint shaded bands behind the lines for the two extreme zones, plus small zone
+// labels (Extreme fear / Fear / Greed / Extreme greed) along the left edge.
 const zoneBands = {
   id: 'zoneBands',
   beforeDatasetsDraw(c){
@@ -326,6 +319,14 @@ const zoneBands = {
       ctx.font = "600 11px 'Source Sans 3', system-ui, sans-serif";
       ctx.textAlign = 'left';
       ctx.fillText(b.label, left + 6, b.labelY);
+    }
+    // Plain "Fear" / "Greed" labels sit just inside the 25 and 75 lines (no shading).
+    for(const z of [
+      {label: 'Fear',  color: css('--fear'),  y: y.getPixelForValue(25) - 6},
+      {label: 'Greed', color: css('--greed'), y: y.getPixelForValue(75) + 14}
+    ]){
+      ctx.fillStyle = alpha(z.color, 0.85);
+      ctx.fillText(z.label, left + 6, z.y);
     }
     ctx.restore();
   }
