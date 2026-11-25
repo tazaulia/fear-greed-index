@@ -332,39 +332,54 @@ const zoneBands = {
   }
 };
 
-// Dot + value on the latest Fear & Greed reading, so "where we are now" stands out.
+// Dot + value tag on the latest point of each line (Fear & Greed and S&P 500),
+// so "where we are now" stands out. Tags sit above-left of their dot, flip below
+// when there's no room, and the S&P tag steps out of the way if the two collide.
 const endPoint = {
   id: 'endPoint',
   afterDatasetsDraw(c){
-    const meta = c.getDatasetMeta(0), pt = meta.data[meta.data.length - 1];
-    if(!pt) return;
-    const v = Math.round(c.data.datasets[0].data[meta.data.length - 1]);
-    const ctx = c.ctx, color = css('--fg');
+    const ctx = c.ctx, {top, bottom} = c.chartArea, h = 18, placed = [];
+    const series = [
+      {i: 0, color: css('--fg'), text: css('--fg'),        fmt: v => String(Math.round(v))},
+      {i: 1, color: css('--sp'), text: css('--body-grey'), fmt: v => Math.round(v).toLocaleString('en-US')}
+    ];
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.fill();
-    ctx.stroke();
-    // Value in a small white tag just above-left of the dot (below it if near the top),
-    // so the lines never run through the number.
     ctx.font = "700 13px 'Source Sans 3', system-ui, sans-serif";
-    const label = String(v), w = ctx.measureText(label).width + 10, h = 18;
-    const bx = pt.x - 8 - w;
-    const by = pt.y - 10 - h < c.chartArea.top ? pt.y + 10 : pt.y - 10 - h;
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(bx, by, w, h, 3);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = color;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, bx + w / 2, by + h / 2 + 1);
+    for(const s of series){
+      const meta = c.getDatasetMeta(s.i), n = meta.data.length, pt = meta.data[n - 1];
+      if(!pt) continue;
+      const label = s.fmt(c.data.datasets[s.i].data[n - 1]);
+      const w = ctx.measureText(label).width + 10, bx = pt.x - 8 - w;
+      const above = pt.y - 10 - h, below = pt.y + 10;
+      const hits = y => placed.some(p => y < p + h + 3 && y + h + 3 > p);
+      let by = above < top ? below : above;
+      if(hits(by)) by = by === above ? below : above;          // try the other side of the dot
+      if(hits(by) || by < top || by + h > bottom){             // still stuck: step clear of the other tag
+        const other = placed[0] ?? by;
+        by = other - h - 4 >= top ? other - h - 4 : other + h + 4;
+      }
+      placed.push(by);
+
+      ctx.beginPath();                                         // dot
+      ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';                               // tag
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, w, h, 3);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = s.text;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, bx + w / 2, by + h / 2 + 1);
+    }
     ctx.restore();
   }
 };
